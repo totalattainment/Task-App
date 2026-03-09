@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Task {
+  id         String       @id @default(cuid())
+  title      String
+  notes      String?
+  status     TaskStatus    @default(NOT_STARTED)
+  priority   TaskPriority  @default(MEDIUM)
+  sortOrder  Int
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  estimate   Estimate?
+  steps      EstimateStep[]
+}
+
+model AppState {
+  id           Int     @id @default(1)
+  activeTaskId String?
+}
+
+model Estimate {
+  id             String   @id @default(cuid())
+  taskId         String   @unique
+  totalMinutes   Int
+  isLarge        Boolean
+  confidenceNote String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model EstimateStep {
+  id              String   @id @default(cuid())
+  taskId          String
+  stepNumber      Int
+  name            String
+  estimateMinutes Int
+  note            String
+  createdAt       DateTime @default(now())
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, stepNumber])
+}
